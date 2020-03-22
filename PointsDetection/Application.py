@@ -1,10 +1,9 @@
 import tkinter as tk
-import numpy as np
+
 import VideoModule as vm
-import threading
-import time
-from PIL import ImageTk
-from PIL import Image
+import numpy as np
+import MyWidgets as mw
+
 
 class Application(tk.Frame):
 
@@ -14,30 +13,20 @@ class Application(tk.Frame):
         self.pack()
         self.__create_widgets()
         self.__initCamera()
-        #t = threading.Thread(target = self.__testVideo)
-        #t.start()
 
     def __initCamera(self):
         self.cam = vm.Camera(self.__receiveCameraData)
 
     def __create_widgets(self):
-        randomArray = np.zeros((255,255, 3), dtype='uint8')
+        randomArray = np.random.rand(255,255, 3) * 255
         byteArray = randomArray.astype(np.uint8)
-        self.__streamImg = self.__byteArrayToImage(byteArray)
-        self.__streamCanvas = tk.Canvas(width = 900, height = 600)
-        self.__streamCanvas.create_image(0,0, anchor='nw', image = self.__streamImg)
+        self.__streamCanvas = mw.ImageCanvas(width = 900, height = 600)
+        self.__streamCanvas.settleImageData(byteArray)
         self.__streamCanvas.pack()
 
     def __receiveCameraData(self, data):
-        img = self.__byteArrayToImage(data)
-        self.__streamCanvas.create_image(0,0, anchor='nw', image = img)
-        self.__streamImg = img
+        self.__streamCanvas.settleImageData(data)
 
     def dispose(self):
         self.cam.dispose()
-
-    @staticmethod
-    def __byteArrayToImage(byteArray):
-        img = ImageTk.PhotoImage(Image.fromarray(byteArray))
-        return img
 
