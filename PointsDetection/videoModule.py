@@ -1,6 +1,6 @@
-import numpy as np
-import cv2
 import threading
+
+import cv2
 
 
 class Camera():
@@ -31,7 +31,6 @@ class Camera():
                     self.__dataReceiveCallback(frame)
                 except Exception as inst:
                     print("error")
-        print('end of cycle')
 
     
     def dispose(self):
