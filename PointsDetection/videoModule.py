@@ -26,6 +26,7 @@ class Camera():
             if self.__isStopped():
                 return
             ret, frame = self.__cap.read()
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             if ret and self.__dataReceiveCallback != None:
                 try:
                     self.__dataReceiveCallback(frame)
