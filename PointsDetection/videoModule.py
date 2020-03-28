@@ -30,7 +30,10 @@ class Camera():
                 try:
                     self.__dataReceiveCallback(frame)
                 except Exception as inst:
-                    print("error")
+                    print(type(inst))
+                    print(inst.args)
+                    print(inst)
+                    return
 
     def dispose(self):
         self.__stop()
