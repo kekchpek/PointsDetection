@@ -1,4 +1,6 @@
 import threading
+import traceback
+
 import numpy as np
 import cv2
 
@@ -33,6 +35,7 @@ class Camera():
                     print(type(inst))
                     print(inst.args)
                     print(inst)
+                    traceback.print_exc()
                     return
 
     def dispose(self):

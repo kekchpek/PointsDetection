@@ -1,7 +1,8 @@
 import tkinter as tk
+import traceback
 
 import VideoModule as vm
-import numpy as np
+import colorsys
 import cv2 as cv
 import MyWidgets as mw
 
@@ -34,19 +35,19 @@ class Application(tk.Frame):
         self.__lowerMaskLabel = tk.Label(master = self.__colorSettingsControl, text="Lower mask border")
         self.__lowerMaskLabel.pack(fill=tk.X, side=tk.TOP)
 
-        self.__hueMinSeek = tk.Scale(master=self.__colorSettingsControl, orient=tk.HORIZONTAL, bg="red",
+        self.__hueMinSeek = tk.Scale(master=self.__colorSettingsControl, orient=tk.HORIZONTAL,
                                      from_=0, to=255, label="Hue", command=self.__changeLowMask)
-        self.__hueMinSeek.set(94)
+        self.__hueMinSeek.set(0)
         self.__hueMinSeek.pack(fill=tk.X, side=tk.TOP, pady=(5,5), padx=20)
 
-        self.__saturationMinSeek = tk.Scale(master=self.__colorSettingsControl, orient=tk.HORIZONTAL, bg="red",
+        self.__saturationMinSeek = tk.Scale(master=self.__colorSettingsControl, orient=tk.HORIZONTAL,
                                             from_=0, to=255, label="Saturtation", command=self.__changeLowMask)
-        self.__saturationMinSeek.set(43)
+        self.__saturationMinSeek.set(0)
         self.__saturationMinSeek.pack(fill=tk.X, side=tk.TOP, pady=(5,5), padx=20)
 
-        self.__valueMinSeek = tk.Scale(master=self.__colorSettingsControl, orient=tk.HORIZONTAL, bg="red",
+        self.__valueMinSeek = tk.Scale(master=self.__colorSettingsControl, orient=tk.HORIZONTAL,
                                        from_=0, to=255, label="Value", command=self.__changeLowMask)
-        self.__valueMinSeek.set(23)
+        self.__valueMinSeek.set(0)
         self.__valueMinSeek.pack(fill=tk.X, side=tk.TOP, pady=(5,5), padx=20)
 
         # Delimiter
@@ -57,17 +58,17 @@ class Application(tk.Frame):
         self.__upperMaskLabel = tk.Label(master = self.__colorSettingsControl, text="Upper mask border")
         self.__upperMaskLabel.pack(fill=tk.X, side=tk.TOP)
 
-        self.__hueMaxSeek = tk.Scale(master=self.__colorSettingsControl, orient=tk.HORIZONTAL, bg="red",
+        self.__hueMaxSeek = tk.Scale(master=self.__colorSettingsControl, orient=tk.HORIZONTAL,
                                      from_=0, to=255, label="Hue", command=self.__changeUpMask)
-        self.__hueMaxSeek.set(153)
+        self.__hueMaxSeek.set(255)
         self.__hueMaxSeek.pack(fill=tk.X, side=tk.TOP, pady=(5,5), padx=20)
 
-        self.__saturationMaxSeek = tk.Scale(master=self.__colorSettingsControl, orient=tk.HORIZONTAL, bg="red",
+        self.__saturationMaxSeek = tk.Scale(master=self.__colorSettingsControl, orient=tk.HORIZONTAL,
                                             from_=0, to=255, label="Saturtation", command=self.__changeUpMask)
         self.__saturationMaxSeek.set(255)
         self.__saturationMaxSeek.pack(fill=tk.X, side=tk.TOP, pady=(5,5), padx=20)
 
-        self.__valueMaxSeek = tk.Scale(master=self.__colorSettingsControl, orient=tk.HORIZONTAL, bg="red",
+        self.__valueMaxSeek = tk.Scale(master=self.__colorSettingsControl, orient=tk.HORIZONTAL,
                                        from_=0, to=255, label="Value", command=self.__changeUpMask)
         self.__valueMaxSeek.set(255)
         self.__valueMaxSeek.pack(fill=tk.X, side=tk.TOP, pady=(5,5), padx=20)
@@ -80,20 +81,32 @@ class Application(tk.Frame):
         self.__minContourAreaLabel = tk.Label(master = self.__colorSettingsControl, text="Contour area")
         self.__minContourAreaLabel.pack(fill=tk.X, side=tk.TOP)
 
-        self.__contourAreaMin = tk.Scale(master=self.__colorSettingsControl, orient=tk.HORIZONTAL, bg="red",
+        self.__contourAreaMin = tk.Scale(master=self.__colorSettingsControl, orient=tk.HORIZONTAL,
                                      from_=0, to=1000, label="Min contour area", command=self.__changeContourAreaMin)
-        self.__contourAreaMin.set(200)
+        self.__contourAreaMin.set(0)
         self.__contourAreaMin.pack(fill=tk.X, side=tk.TOP, pady=(5,5), padx=20)
 
         self.__colorSettingsControl.pack(side=tk.TOP)
 
     def __changeLowMask(self, _):
-        lowerMaskBorder = (self.__hueMinSeek.get(), self.__saturationMinSeek.get(), self.__valueMinSeek.get())
-        self.__contourDetector.setLowerMaskBorder(lowerMaskBorder)
+        try:
+            lowerMaskBorder = (self.__hueMinSeek.get(), self.__saturationMinSeek.get(), self.__valueMinSeek.get())
+            self.__contourDetector.setLowerMaskBorder(lowerMaskBorder)
+        except Exception as err:
+            print(type(err))
+            print(err.args)
+            print(err)
+            traceback.print_exc()
 
     def __changeUpMask(self, _):
-        upperMaskBorder = (self.__hueMaxSeek.get(), self.__saturationMaxSeek.get(), self.__valueMaxSeek.get())
-        self.__contourDetector.setUpperMaskBorder(upperMaskBorder)
+        try:
+            upperMaskBorder = (self.__hueMaxSeek.get(), self.__saturationMaxSeek.get(), self.__valueMaxSeek.get())
+            self.__contourDetector.setUpperMaskBorder(upperMaskBorder)
+        except Exception as err:
+            print(type(err))
+            print(err.args)
+            print(err)
+            traceback.print_exc()
 
     def __changeContourAreaMin(self, value):
         self.__contourDetector.setContourAreaMin(int(value))
