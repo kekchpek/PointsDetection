@@ -102,6 +102,7 @@ class ColorSeekBar(tk.Frame):
             height = kw.get('height')
         self.__minVal = 0
         self.__curVal = 0
+        self.__useVariableValue = False
         self.__maxVal = 100
         self.__bgGradientColor1 = "#FFFFFF"
         self.__bgGradientColor2 = "#FFFFFF"
@@ -158,7 +159,7 @@ class ColorSeekBar(tk.Frame):
         self.__maxPinPos = width - int(self.__pinWidth * 0.5)
 
     def __updatePinPos(self):
-        self.__curPinPos = self.__minPinPos + (self.__maxPinPos - self.__minPinPos) *(self.__curVal / (self.__maxVal - self.__minVal))
+        self.__curPinPos = self.__minPinPos + (self.__maxPinPos - self.__minPinPos) *(self.getValue() / (self.__maxVal - self.__minVal))
         self.__pin.place_configure(x = self.__curPinPos, rely=0.5, anchor = tk.CENTER)
 
     def __createWidgets(self):
@@ -227,10 +228,24 @@ class ColorSeekBar(tk.Frame):
     def setValue(self, value):
         if value < self.__minVal or value > self.__maxVal:
             raise ValueError('Value is not in range [' + str(self.__minVal) + '; ' + str(self.__maxVal) + ']')
-        self.__curVal = value
+        if self.__useVariableValue:
+            self.__curVal.set(value)
+        else:
+            self.__curVal = value
         if self.__valueHandler != None:
             self.__valueHandler(value)
         self.__updatePinPos()
 
     def getValue(self):
-        return self.__curVal
+        if self.__useVariableValue:
+            return self.__curVal.get()
+        else:
+            return self.__curVal
+
+    def setVariable(self, variable):
+        self.__useVariableValue = True
+        self.__curVal = variable
+
+    def resetVariable(self):
+        self.__useVariableValue = False
+        self.__curVal = self.__curVal.get()
