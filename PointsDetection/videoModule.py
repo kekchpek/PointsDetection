@@ -69,6 +69,10 @@ class MaskContoursDetector():
 
     def findContours(self, hsvData):
         mask = cv2.inRange(hsvData, self.__lowerMaskBorder, self.__upperMaskBoreder)
+        redOverlimitUpperBorder = (max(0, self.__upperMaskBoreder[0] - 180), self.__upperMaskBoreder[1], self.__upperMaskBoreder[2])
+        redOverlimitLowerBorder = (max(0, self.__lowerMaskBorder[0] - 180), self.__lowerMaskBorder[1], self.__lowerMaskBorder[2])
+        redOverLimitMask = cv2.inRange(hsvData, redOverlimitLowerBorder, redOverlimitUpperBorder)
+        mask = mask + redOverLimitMask
         contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         contours = [c for c in contours if cv2.contourArea(c)>self.__contourAreaMin]
         frame = cv2.drawContours(hsvData, contours, -1, (0,255,255), thickness=5)

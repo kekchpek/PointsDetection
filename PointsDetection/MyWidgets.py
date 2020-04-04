@@ -1,11 +1,19 @@
+import colorsys
 import tkinter as tk
+import numpy as np
+import cv2 as cv
 from PIL import Image
 from PIL import ImageTk
 
 class ImageCanvas(tk.Canvas):
 
+    SAVE_RATIO_MODE = 'save_ratio'
+    FILL_MODE = 'fill'
+
     def __init__(self, master=None, cnf={}, **kw):
         super(ImageCanvas, self).__init__(master, cnf, **kw)
+        self.__mode = self.SAVE_RATIO_MODE
+        self.__rawImg = None
         self.height = self.winfo_height()
         self.width = self.winfo_width()
         self.bind('<Configure>', self.__sizeChangedHandler)
@@ -16,11 +24,19 @@ class ImageCanvas(tk.Canvas):
         self.__resizeImage()
 
     def __resizeImage(self):
+        if(self.__rawImg == None):
+            return
         imgWidth = self.__rawImg.width
         imgHeight = self.__rawImg.height
-        scale = min(self.width/imgWidth, self.height/imgHeight)
-        newImgWidth = int(self.__rawImg.size[0]*scale)
-        newImgHeight = int(self.__rawImg.size[1]*scale)
+        newImgWidth = 0
+        newImgHeight = 0
+        if self.__mode == self.SAVE_RATIO_MODE:
+            scale = min(self.width/imgWidth, self.height/imgHeight)
+            newImgWidth = int(self.__rawImg.size[0]*scale)
+            newImgHeight = int(self.__rawImg.size[1]*scale)
+        if self.__mode == self.FILL_MODE:
+            newImgWidth = self.width
+            newImgHeight = self.height
         if newImgHeight != 0 and newImgWidth != 0:
             rawImg = self.__rawImg.resize((newImgWidth, newImgHeight), Image.ANTIALIAS)
             img = ImageTk.PhotoImage(rawImg)
@@ -33,16 +49,18 @@ class ImageCanvas(tk.Canvas):
 
     def settlePILImage(self, image):
         self.__rawImg = image
-        imgWidth = self.__rawImg.width
-        imgHeight = self.__rawImg.height
-        scale = min(self.width/imgWidth, self.height/imgHeight)
-        newImgWidth = int(self.__rawImg.size[0]*scale)
-        newImgHeight = int(self.__rawImg.size[1]*scale)
-        if newImgHeight != 0 and newImgWidth != 0:
-            rawImg = self.__rawImg.resize((newImgWidth, newImgHeight), Image.ANTIALIAS)
-            img = ImageTk.PhotoImage(rawImg)
-            self.create_image(self.width/2, self.height/2, anchor='c', image = img)
-            self.__image = img
+        self.__resizeImage()
+
+    def setMode(self, mode):
+        if mode != self.SAVE_RATIO_MODE and mode != self.FILL_MODE:
+            raise ValueError("Unknown mode")
+        if mode == self.__mode:
+            return
+        self.__mode = mode
+        self.__resizeImage()
+
+    def getMode(self):
+        return self.__mode
 
 class GradientCanvas(tk.Canvas):
     '''A gradient frame which uses a canvas to draw the background'''
@@ -77,7 +95,7 @@ class GradientCanvas(tk.Canvas):
             self.create_line(i,0,i,height, tags=("gradient",), fill=color)
         self.lower("gradient")
 
-class ColorSeekBar(tk.Frame):
+class SeekBar(tk.Frame):
 
     def __init__(self, master = None, **kw):
         self.__initDefaultSpecificConfig(**kw)
@@ -85,7 +103,7 @@ class ColorSeekBar(tk.Frame):
         self.__initParentWidget(master, **kw)
         self.__calculatePinPosRange()
         self.__createWidgets()
-        self.bind('<Configure>', self.__configure)
+        self.bind('<Configure>', self.__onSizeChanged)
         self.bind('<B1-Motion>', self.__motion)
         self.bind('<Button-1>', self.__motion)
 
@@ -172,6 +190,7 @@ class ColorSeekBar(tk.Frame):
 
         # Seek image bg
         self.__bgImageCanvas = ImageCanvas(master=self, highlightthickness=0)
+        self.__bgImageCanvas.setMode(ImageCanvas.FILL_MODE)
         self.__bgImageCanvas.bind('<B1-Motion>', self.__motion)
         self.__bgImageCanvas.bind('<Button-1>', self.__motion)
         if self.__bgImage != None:
@@ -185,14 +204,17 @@ class ColorSeekBar(tk.Frame):
         self.__pin.bind('<Button-1>', self.__motion)
         self.__updatePinPos()
 
-    def __configure(self, event = None):
+    def __onSizeChanged(self, event = None):
         self.root_x = self.winfo_rootx()
         self.root_y = self.winfo_rooty()
-
         width = self.winfo_width()
         seekWidth = max(width - self.__pinWidth, 1)
         self.__bgGradientCanvas.configure(width = seekWidth, height=self.__seekHeight)
+        self.__bgImageCanvas.configure(width = seekWidth, height=self.__seekHeight)
+        self.__calculatePinPosRange()
+        self.__updatePinPos()
 
+    def __onConfigure(self):
         self.__pin.configure(width = self.__pinWidth, height=self.__pinHeight)
 
         if self.__bgImage != None:
@@ -203,12 +225,13 @@ class ColorSeekBar(tk.Frame):
 
         if self.__minVal >= self.__maxVal:
             raise ValueError('minVal >= maxVal')
-        value = self.__curVal
+        value = self.getValue()
         value = max(value, self.__minVal)
         value = min(value, self.__maxVal)
         self.setValue(value)
 
         self.__calculatePinPosRange()
+        self.__updatePinPos()
 
         self.__bgGradientCanvas.drawGradient(self.__bgGradientColor1, self.__bgGradientColor2)
 
@@ -224,8 +247,11 @@ class ColorSeekBar(tk.Frame):
     def configure(self, cnf=None, **kw):
         kw = self.__updateSpecificConfig(**kw)
         super().configure(**kw)
+        self.__onConfigure()
 
     def setValue(self, value):
+        if self.getValue() == value:
+            return
         if value < self.__minVal or value > self.__maxVal:
             raise ValueError('Value is not in range [' + str(self.__minVal) + '; ' + str(self.__maxVal) + ']')
         if self.__useVariableValue:
@@ -249,3 +275,76 @@ class ColorSeekBar(tk.Frame):
     def resetVariable(self):
         self.__useVariableValue = False
         self.__curVal = self.__curVal.get()
+
+class CanvasHS(tk.Frame):
+
+    def __init__(self, master = None, cnf = {}, **kw):
+        super().__init__(master = master, cnf = cnf, **kw)
+        self.__initVars()
+        self.__createWidgets()
+        self.__loadImage()
+
+    def __createWidgets(self):
+        self.__imageCanvas = ImageCanvas(master = self)
+        self.__imageCanvas.setMode(ImageCanvas.FILL_MODE)
+        self.__imageCanvas.pack(fill=tk.BOTH)
+
+    def __setImage(self, img):
+        self.__imageCanvas.settleImageData(img)
+
+    def __loadImage(self):
+        # create HSV
+        self.__HSVImage = np.full((256, 256, 3), 0)
+        for i in range(256):
+            for j in range(256):
+                self.__HSVImage[j, i] = (i, j, 255)
+        self.__HSVImage = self.__HSVImage.astype('uint8')
+        # create RGB
+        img = cv.cvtColor(self.__HSVImage, cv.COLOR_HSV2RGB)
+
+        self.__setImage(img.astype('uint8'))
+
+    def __initVars(self):
+        self.__HSVImage = None
+        self.__imageCanvas = None
+        self.__value = 255
+        self.__hueMin = 0
+        self.__hueMax = 255
+        self.__saturationMin = 0
+        self.__saturationMax = 255
+
+    def setHSVValue(self, value):
+        if self.__value == value:
+            return
+        self.__value = value
+        self.__HSVImage[:,:,2] = value
+        self.__updateImage()
+
+    def setHSBorders(self, minHue, maxHue, minSaturation, maxSaturetion):
+        if minHue == self.__hueMin and maxHue == self.__hueMax and minSaturation == self.__saturationMin and maxSaturetion == self.__saturationMax:
+            return
+        self.__saturationMin = minSaturation
+        self.__saturationMax = maxSaturetion
+        self.__hueMin = minHue
+        self.__hueMax = maxHue
+        self.__updateImage()
+
+    def __updateImage(self):
+        borderColor = (0,0,0)
+        if self.__value < 100:
+            borderColor = (255,255,255)
+
+        img = cv.cvtColor(self.__HSVImage, cv.COLOR_HSV2RGB)
+        topHue = min(self.__hueMax + 1, 255)
+        bottomHue = max(0, self.__hueMin - 1)
+        topSaturation = min(self.__saturationMax + 1, 255)
+        bottomsaturation = max(0, self.__saturationMin - 1)
+        if self.__hueMax < 255:
+            img[bottomsaturation:topSaturation,topHue] = borderColor
+        if self.__hueMin > 0:
+            img[bottomsaturation:topSaturation,bottomHue] = borderColor
+        if self.__saturationMax < 255:
+            img[topSaturation,bottomHue:topHue] = borderColor
+        if self.__saturationMin > 0:
+            img[bottomsaturation,bottomHue:topHue] = borderColor
+        self.__setImage(img.astype('uint8'))

@@ -2,8 +2,8 @@ import tkinter as tk
 import traceback
 
 import VideoModule as vm
-import colorsys
 import cv2 as cv
+from ColorSettingsWidget import ColorSettings
 import MyWidgets as mw
 
 
@@ -15,82 +15,51 @@ class Application(tk.Frame):
         super().__init__(master)
         self.master = master
         self.pack()
-        self.__create_widgets()
         self.__initCamera()
         self.__contourDetector = vm.MaskContoursDetector()
+        self.__initVars()
+        self.__createWidgets()
 
     def __initCamera(self):
         self.cam = vm.Camera(self.__receiveCameraData)
 
-    def __create_widgets(self):
+    def __initVars(self):
+        # widgets
+        self.__hueMinSeek = None
+        self.__saturationMinSeek = None
+        self.__valueMinSeek = None
+        self.__hueMaxSeek = None
+        self.__saturationMaxSeek = None
+        self.__valueMaxSeek = None
+
+        # vars
+        self.__hueMinVar = tk.IntVar()
+        self.__hueMinVar.trace_add('write', self.__changeLowMask)
+        self.__saturationMinVar = tk.IntVar()
+        self.__saturationMinVar.trace_add('write', self.__changeLowMask)
+        self.__valueMinVar = tk.IntVar()
+        self.__valueMinVar.trace_add('write', self.__changeLowMask)
+
+        self.__hueMaxVar = tk.IntVar()
+        self.__hueMaxVar.trace_add('write', self.__changeUpMask)
+        self.__saturationMaxVar = tk.IntVar()
+        self.__saturationMaxVar.trace_add('write', self.__changeUpMask)
+        self.__valueMaxVar = tk.IntVar()
+        self.__valueMaxVar.trace_add('write', self.__changeUpMask)
+
+    def __createWidgets(self):
         self.__streamCanvas = mw.ImageCanvas(master=self, width=600, height=400)
         self.__streamCanvas.pack(side=tk.LEFT)
-        self.__initContourDetectorSettingsWidgets()
 
-    def __initContourDetectorSettingsWidgets(self):
-        self.__colorSettingsControl = tk.Canvas(master=self, width=600, height=600, bg="blue")
-        self.__colorSettingsControl.pack_propagate(0)
+        self.__colorSettingWidget = ColorSettings(self, self.__hueMinVar, self.__saturationMinVar, self.__valueMinVar,
+                                                  self.__hueMaxVar, self.__saturationMaxVar, self.__valueMaxVar,
+                                                  width=600, height=900)
+        self.__colorSettingWidget.pack_propagate(0)
+        self.__colorSettingWidget.pack(side=tk.LEFT)
 
-        # Lower border
-        self.__lowerMaskLabel = tk.Label(master = self.__colorSettingsControl, text="Lower mask border")
-        self.__lowerMaskLabel.pack(fill=tk.X, side=tk.TOP)
-
-        self.__hueMinSeek = tk.Scale(master=self.__colorSettingsControl, orient=tk.HORIZONTAL,
-                                     from_=0, to=255, label="Hue", command=self.__changeLowMask)
-        self.__hueMinSeek.set(0)
-        self.__hueMinSeek.pack(fill=tk.X, side=tk.TOP, pady=(5,5), padx=20)
-
-        self.__saturationMinSeek = tk.Scale(master=self.__colorSettingsControl, orient=tk.HORIZONTAL,
-                                            from_=0, to=255, label="Saturtation", command=self.__changeLowMask)
-        self.__saturationMinSeek.set(0)
-        self.__saturationMinSeek.pack(fill=tk.X, side=tk.TOP, pady=(5,5), padx=20)
-
-        self.__valueMinSeek = tk.Scale(master=self.__colorSettingsControl, orient=tk.HORIZONTAL,
-                                       from_=0, to=255, label="Value", command=self.__changeLowMask)
-        self.__valueMinSeek.set(0)
-        self.__valueMinSeek.pack(fill=tk.X, side=tk.TOP, pady=(5,5), padx=20)
-
-        # Delimiter
-        self.__maskSettingsDelimiter = tk.Frame(master = self.__colorSettingsControl, height=20)
-        self.__maskSettingsDelimiter.pack(fill=tk.X, side=tk.TOP)
-
-        # Upper border
-        self.__upperMaskLabel = tk.Label(master = self.__colorSettingsControl, text="Upper mask border")
-        self.__upperMaskLabel.pack(fill=tk.X, side=tk.TOP)
-
-        self.__hueMaxSeek = tk.Scale(master=self.__colorSettingsControl, orient=tk.HORIZONTAL,
-                                     from_=0, to=255, label="Hue", command=self.__changeUpMask)
-        self.__hueMaxSeek.set(255)
-        self.__hueMaxSeek.pack(fill=tk.X, side=tk.TOP, pady=(5,5), padx=20)
-
-        self.__saturationMaxSeek = tk.Scale(master=self.__colorSettingsControl, orient=tk.HORIZONTAL,
-                                            from_=0, to=255, label="Saturtation", command=self.__changeUpMask)
-        self.__saturationMaxSeek.set(255)
-        self.__saturationMaxSeek.pack(fill=tk.X, side=tk.TOP, pady=(5,5), padx=20)
-
-        self.__valueMaxSeek = tk.Scale(master=self.__colorSettingsControl, orient=tk.HORIZONTAL,
-                                       from_=0, to=255, label="Value", command=self.__changeUpMask)
-        self.__valueMaxSeek.set(255)
-        self.__valueMaxSeek.pack(fill=tk.X, side=tk.TOP, pady=(5,5), padx=20)
-
-        # Delimiter
-        self.__maskSettingsDelimiter2 = tk.Frame(master = self.__colorSettingsControl, height=20)
-        self.__maskSettingsDelimiter2.pack(fill=tk.X, side=tk.TOP)
-
-        # Contour area
-        self.__minContourAreaLabel = tk.Label(master = self.__colorSettingsControl, text="Contour area")
-        self.__minContourAreaLabel.pack(fill=tk.X, side=tk.TOP)
-
-        self.__contourAreaMin = tk.Scale(master=self.__colorSettingsControl, orient=tk.HORIZONTAL,
-                                     from_=0, to=1000, label="Min contour area", command=self.__changeContourAreaMin)
-        self.__contourAreaMin.set(0)
-        self.__contourAreaMin.pack(fill=tk.X, side=tk.TOP, pady=(5,5), padx=20)
-
-        self.__colorSettingsControl.pack(side=tk.TOP)
-
-    def __changeLowMask(self, _):
+    def __changeLowMask(self, *_):
         try:
-            lowerMaskBorder = (self.__hueMinSeek.get(), self.__saturationMinSeek.get(), self.__valueMinSeek.get())
+            lowerMaskBorder = (self.__hueMinVar.get(), self.__saturationMinVar.get(), self.__valueMinVar.get())
             self.__contourDetector.setLowerMaskBorder(lowerMaskBorder)
         except Exception as err:
             print(type(err))
@@ -98,9 +67,9 @@ class Application(tk.Frame):
             print(err)
             traceback.print_exc()
 
-    def __changeUpMask(self, _):
+    def __changeUpMask(self, *_):
         try:
-            upperMaskBorder = (self.__hueMaxSeek.get(), self.__saturationMaxSeek.get(), self.__valueMaxSeek.get())
+            upperMaskBorder = (self.__hueMaxVar.get(), self.__saturationMaxVar.get(), self.__valueMaxVar.get())
             self.__contourDetector.setUpperMaskBorder(upperMaskBorder)
         except Exception as err:
             print(type(err))
