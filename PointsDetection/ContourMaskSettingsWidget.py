@@ -7,7 +7,7 @@ import MyWidgets as mw
 import PIL
 
 
-class ColorSettings(tk.Frame):
+class ContourMaskSettings(tk.Frame):
 
     def __init__(self, master, hueMinVar, saturationMinVar, valueMinVar, hueMaxVar,
                  saturationMaxVar, valueMaxVar, contourMinVar, **kw):

@@ -3,7 +3,7 @@ import traceback
 
 import VideoModule as vm
 import cv2 as cv
-from ColorSettingsWidget import ColorSettings
+from ContourMaskSettingsWidget import ContourMaskSettings
 import MyWidgets as mw
 
 
@@ -54,7 +54,7 @@ class Application(tk.Frame):
         self.__streamCanvas = mw.ImageCanvas(master=self, width=600, height=400)
         self.__streamCanvas.pack(side=tk.LEFT)
 
-        self.__colorSettingWidget = ColorSettings(self, self.__hueMinVar, self.__saturationMinVar, self.__valueMinVar,
+        self.__colorSettingWidget = ContourMaskSettings(self, self.__hueMinVar, self.__saturationMinVar, self.__valueMinVar,
                                                   self.__hueMaxVar, self.__saturationMaxVar, self.__valueMaxVar,
                                                   self.__minContourVar,
                                                   width=400, height=900)
