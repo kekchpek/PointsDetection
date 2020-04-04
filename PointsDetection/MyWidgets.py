@@ -205,8 +205,6 @@ class SeekBar(tk.Frame):
         self.__updatePinPos()
 
     def __onSizeChanged(self, event = None):
-        self.root_x = self.winfo_rootx()
-        self.root_y = self.winfo_rooty()
         width = self.winfo_width()
         seekWidth = max(width - self.__pinWidth, 1)
         self.__bgGradientCanvas.configure(width = seekWidth, height=self.__seekHeight)
@@ -237,7 +235,7 @@ class SeekBar(tk.Frame):
 
     def __motion(self, event = None):
         if event != None:
-            x = event.x_root - self.root_x
+            x = event.x_root - self.winfo_rootx()
             seekX = x - self.__minPinPos
             value = int((seekX / (self.__maxPinPos - self.__minPinPos)) * (self.__maxVal - self.__minVal))
             value = max(value, self.__minVal)
