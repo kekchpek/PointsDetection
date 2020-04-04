@@ -346,3 +346,76 @@ class CanvasHS(tk.Frame):
         if self.__saturationMin > 0:
             img[bottomsaturation,bottomHue:topHue] = borderColor
         self.__setImage(img.astype('uint8'))
+
+class CanvasHV(tk.Frame):
+
+    def __init__(self, master = None, cnf = {}, **kw):
+        super().__init__(master = master, cnf = cnf, **kw)
+        self.__initVars()
+        self.__createWidgets()
+        self.__loadImage()
+
+    def __createWidgets(self):
+        self.__imageCanvas = ImageCanvas(master = self)
+        self.__imageCanvas.setMode(ImageCanvas.FILL_MODE)
+        self.__imageCanvas.pack(fill=tk.BOTH)
+
+    def __setImage(self, img):
+        self.__imageCanvas.settleImageData(img)
+
+    def __loadImage(self):
+        # create HSV
+        self.__HSVImage = np.full((256, 256, 3), 0)
+        for i in range(256):
+            for j in range(256):
+                self.__HSVImage[j, i] = (i, 255, j)
+        self.__HSVImage = self.__HSVImage.astype('uint8')
+        # create RGB
+        img = cv.cvtColor(self.__HSVImage, cv.COLOR_HSV2RGB)
+
+        self.__setImage(img.astype('uint8'))
+
+    def __initVars(self):
+        self.__HSVImage = None
+        self.__imageCanvas = None
+        self.__saturation = 255
+        self.__hueMin = 0
+        self.__hueMax = 255
+        self.__valueMin = 0
+        self.__valueMax = 255
+
+    def setHSVSaturation(self, value):
+        if self.__saturation == value:
+            return
+        self.__saturation = value
+        self.__HSVImage[:,:,2] = value
+        self.__updateImage()
+
+    def setHSBorders(self, minHue, maxHue, minValue, maxValue):
+        if minHue == self.__hueMin and maxHue == self.__hueMax and minSaturation == self.__valueMin and maxSaturetion == self.__ValueMax:
+            return
+        self.__valueMin = minValue
+        self.__ValueMax = maxValue
+        self.__hueMin = minHue
+        self.__hueMax = maxHue
+        self.__updateImage()
+
+    def __updateImage(self):
+        borderColor = (255,255,255)
+        if self.__saturation < 100:
+            borderColor = (0,0,0)
+
+        img = cv.cvtColor(self.__HSVImage, cv.COLOR_HSV2RGB)
+        topHue = min(self.__hueMax + 1, 255)
+        bottomHue = max(0, self.__hueMin - 1)
+        topSaturation = min(self.__valueMax + 1, 255)
+        bottomsaturation = max(0, self.__valueMin - 1)
+        if self.__hueMax < 255:
+            img[bottomsaturation:topSaturation,topHue] = borderColor
+        if self.__hueMin > 0:
+            img[bottomsaturation:topSaturation,bottomHue] = borderColor
+        if self.__valueMax < 255:
+            img[topSaturation,bottomHue:topHue] = borderColor
+        if self.__valueMin > 0:
+            img[bottomsaturation,bottomHue:topHue] = borderColor
+        self.__setImage(img.astype('uint8'))
