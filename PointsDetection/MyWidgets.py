@@ -336,15 +336,15 @@ class CanvasHS(tk.Frame):
         topHue = min(self.__hueMax + 1, 255)
         bottomHue = max(0, self.__hueMin - 1)
         topSaturation = min(self.__saturationMax + 1, 255)
-        bottomsaturation = max(0, self.__saturationMin - 1)
+        bottomSaturation = max(0, self.__saturationMin - 1)
         if self.__hueMax < 255:
-            img[bottomsaturation:topSaturation,topHue] = borderColor
+            img[bottomSaturation:topSaturation,topHue] = borderColor
         if self.__hueMin > 0:
-            img[bottomsaturation:topSaturation,bottomHue] = borderColor
+            img[bottomSaturation:topSaturation,bottomHue] = borderColor
         if self.__saturationMax < 255:
             img[topSaturation,bottomHue:topHue] = borderColor
         if self.__saturationMin > 0:
-            img[bottomsaturation,bottomHue:topHue] = borderColor
+            img[bottomSaturation,bottomHue:topHue] = borderColor
         self.__setImage(img.astype('uint8'))
 
 class CanvasHV(tk.Frame):
@@ -388,14 +388,14 @@ class CanvasHV(tk.Frame):
         if self.__saturation == value:
             return
         self.__saturation = value
-        self.__HSVImage[:,:,2] = value
+        self.__HSVImage[:,:,1] = value
         self.__updateImage()
 
-    def setHSBorders(self, minHue, maxHue, minValue, maxValue):
-        if minHue == self.__hueMin and maxHue == self.__hueMax and minSaturation == self.__valueMin and maxSaturetion == self.__ValueMax:
+    def setHVBorders(self, minHue, maxHue, minValue, maxValue):
+        if minHue == self.__hueMin and maxHue == self.__hueMax and minValue == self.__valueMin and maxValue == self.__valueMax:
             return
         self.__valueMin = minValue
-        self.__ValueMax = maxValue
+        self.__valueMax = maxValue
         self.__hueMin = minHue
         self.__hueMax = maxHue
         self.__updateImage()
@@ -403,7 +403,7 @@ class CanvasHV(tk.Frame):
     def __updateImage(self):
         borderColor = (255,255,255)
         if self.__saturation < 100:
-            borderColor = (0,0,0)
+            borderColor = (255,0,0)
 
         img = cv.cvtColor(self.__HSVImage, cv.COLOR_HSV2RGB)
         topHue = min(self.__hueMax + 1, 255)

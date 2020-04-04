@@ -4,6 +4,7 @@ import traceback
 import VideoModule as vm
 import cv2 as cv
 from ContourMaskSettingsWidget import ContourMaskSettings
+from HSVRangeDisplayWidget import  HSVRangeDisplay
 import MyWidgets as mw
 
 
@@ -54,12 +55,19 @@ class Application(tk.Frame):
         self.__streamCanvas = mw.ImageCanvas(master=self, width=600, height=400)
         self.__streamCanvas.pack(side=tk.LEFT)
 
+        self.__hsvRangeDisplay = HSVRangeDisplay(self, self.__hueMinVar, self.__saturationMinVar, self.__valueMinVar,
+                                                  self.__hueMaxVar, self.__saturationMaxVar, self.__valueMaxVar,
+                                                  width=400, height=400)
+        self.__hsvRangeDisplay.pack_propagate(0)
+        self.__hsvRangeDisplay.pack(side=tk.LEFT)
+
         self.__colorSettingWidget = ContourMaskSettings(self, self.__hueMinVar, self.__saturationMinVar, self.__valueMinVar,
                                                   self.__hueMaxVar, self.__saturationMaxVar, self.__valueMaxVar,
                                                   self.__minContourVar,
                                                   width=400, height=900)
         self.__colorSettingWidget.pack_propagate(0)
         self.__colorSettingWidget.pack(side=tk.LEFT)
+
 
     def __changeLowMask(self, *_):
         try:
