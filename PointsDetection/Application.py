@@ -47,13 +47,17 @@ class Application(tk.Frame):
         self.__valueMaxVar = tk.IntVar()
         self.__valueMaxVar.trace_add('write', self.__changeUpMask)
 
+        self.__minContourVar = tk.IntVar()
+        self.__minContourVar.trace_add('write', self.__changeContourAreaMin)
+
     def __createWidgets(self):
         self.__streamCanvas = mw.ImageCanvas(master=self, width=600, height=400)
         self.__streamCanvas.pack(side=tk.LEFT)
 
         self.__colorSettingWidget = ColorSettings(self, self.__hueMinVar, self.__saturationMinVar, self.__valueMinVar,
                                                   self.__hueMaxVar, self.__saturationMaxVar, self.__valueMaxVar,
-                                                  width=600, height=900)
+                                                  self.__minContourVar,
+                                                  width=400, height=900)
         self.__colorSettingWidget.pack_propagate(0)
         self.__colorSettingWidget.pack(side=tk.LEFT)
 
@@ -77,8 +81,8 @@ class Application(tk.Frame):
             print(err)
             traceback.print_exc()
 
-    def __changeContourAreaMin(self, value):
-        self.__contourDetector.setContourAreaMin(int(value))
+    def __changeContourAreaMin(self, *_):
+        self.__contourDetector.setContourAreaMin(self.__minContourVar.get())
 
     def __receiveCameraData(self, data):
         data = cv.cvtColor(data, cv.COLOR_BGR2HSV)
