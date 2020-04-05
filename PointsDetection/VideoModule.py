@@ -44,10 +44,11 @@ class Camera():
 
 class MaskContoursDetector():
 
-    def __init__(self, lowerMaskBorder = (0, 0, 0), upperMaskBorder = (255, 255, 255), contourAreaMin = 0):
+    def __init__(self, lowerMaskBorder = (0, 0, 0), upperMaskBorder = (255, 255, 255), contourAreaMin = 0, contourRectAreaMin = 0):
         self.__lowerMaskBorder = lowerMaskBorder
         self.__upperMaskBoreder = upperMaskBorder
         self.__contourAreaMin = contourAreaMin
+        self.__contourRectAreaMin = contourRectAreaMin
 
     def getLowerMaskBorder(self):
         return self.__lowerMaskBorder
@@ -64,6 +65,9 @@ class MaskContoursDetector():
     def setContourAreaMin(self, value):
         self.__contourAreaMin = value
 
+    def setContourRectAreaMin(self, value):
+        self.__contourRectAreaMin = value
+
     def getcontourAreaMin(self):
         return self.__contourAreaMin
 
@@ -74,6 +78,17 @@ class MaskContoursDetector():
         redOverLimitMask = cv2.inRange(hsvData, redOverlimitLowerBorder, redOverlimitUpperBorder)
         mask = mask + redOverLimitMask
         contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        contours = [c for c in contours if cv2.contourArea(c)>self.__contourAreaMin]
-        frame = cv2.drawContours(hsvData, contours, -1, (0,255,255), thickness=5)
-        return frame, contours
+        contours = [c for c in contours if cv2.contourArea(c) > self.__contourAreaMin]
+        contours2 = []
+        rects = []
+        contourRectFrame = np.copy(hsvData)
+        for c in contours:
+            rect = cv2.minAreaRect(c)
+            if rect[1][0] * rect[1][1] > self.__contourRectAreaMin:
+                box = cv2.boxPoints(rect)
+                box = np.int0(box)
+                rects.append(box)
+                contours2.append(c)
+        contourRectFrame = cv2.drawContours(contourRectFrame, rects, -1, (0,255,255), thickness=5)
+        contoursFrame = cv2.drawContours(hsvData, contours, -1, (0,255,255), thickness=5)
+        return contoursFrame, contourRectFrame, contours2

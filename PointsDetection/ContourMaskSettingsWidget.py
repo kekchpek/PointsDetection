@@ -10,7 +10,7 @@ import PIL
 class ContourMaskSettings(tk.Frame):
 
     def __init__(self, master, hueMinVar, saturationMinVar, valueMinVar, hueMaxVar,
-                 saturationMaxVar, valueMaxVar, contourMinVar, **kw):
+                 saturationMaxVar, valueMaxVar, contourMinVar, contourRectMinVar, **kw):
         super().__init__(master=master, cnf={}, **kw)
         self.__hueMinVar = hueMinVar
         self.__saturationMinVar = saturationMinVar
@@ -19,6 +19,7 @@ class ContourMaskSettings(tk.Frame):
         self.__saturationMaxVar = saturationMaxVar
         self.__valueMaxVar = valueMaxVar
         self.__contourMinVar = contourMinVar
+        self.__contourRectMinVar = contourRectMinVar
 
         self.__initContourDetectorSettingsWidgets()
 
@@ -29,6 +30,7 @@ class ContourMaskSettings(tk.Frame):
         self.__saturationMaxVar.trace_add('write', self.__onSaturationMaxChanged)
         self.__valueMaxVar.trace_add('write', self.__onValueMaxChanged)
         self.__contourMinVar.trace_add('write', self.__onContourMinChanged)
+        self.__contourRectMinVar.trace_add('write', self.__onContourRectMinChanged)
 
     @staticmethod
     def __hsvToRgb(src):
@@ -153,6 +155,16 @@ class ContourMaskSettings(tk.Frame):
             traceback.print_exc()
             return
 
+    def __onContourRectMinChanged(self, *args):
+        try:
+            self.__contourRectMinValueLabel.configure(text=str(self.__contourRectMinVar.get()))
+        except Exception as inst:
+            print(type(inst))
+            print(inst.args)
+            print(inst)
+            traceback.print_exc()
+            return
+
     def __initContourDetectorSettingsWidgets(self):
 
         bg = PIL.Image.open("Assets/hue.jpg")
@@ -259,10 +271,11 @@ class ContourMaskSettings(tk.Frame):
         self.__maskSettingsDelimiter2 = tk.Frame(master = self, height=20)
         self.__maskSettingsDelimiter2.pack(fill=tk.X, side=tk.TOP)
 
-        # Contour area
-        self.__minContourAreaLabel = tk.Label(master = self, text="Contour area")
+        # Contour parms
+        self.__minContourAreaLabel = tk.Label(master = self, text="Contour params")
         self.__minContourAreaLabel.pack(fill=tk.X, side=tk.TOP)
 
+        # Contour area
         self.__contourMinFrame = tk.Frame(master = self)
         self.__contourMinLabel = tk.Label(master = self.__contourMinFrame, text = 'Min contour area: ')
         self.__contourMinLabel.pack(fill=tk.X, side=tk.LEFT)
@@ -276,3 +289,18 @@ class ContourMaskSettings(tk.Frame):
         self.__contourAreaMinSeek.setVariable(self.__contourMinVar)
         self.__contourAreaMinSeek.setValue(0)
         self.__contourAreaMinSeek.pack(fill=tk.X, side=tk.TOP, pady=(0,5), padx=20)
+
+        # Contour rect area
+        self.__contourRectMinFrame = tk.Frame(master=self)
+        self.__contourRectMinLabel = tk.Label(master=self.__contourRectMinFrame, text='Min contour rect area: ')
+        self.__contourRectMinLabel.pack(fill=tk.X, side=tk.LEFT)
+        self.__contourRectMinValueLabel = tk.Label(master=self.__contourRectMinFrame, text='0')
+        self.__contourRectMinValueLabel.pack(fill=tk.X, side=tk.LEFT)
+        self.__contourRectMinFrame.pack(fill=tk.X, side=tk.TOP, pady=(5, 0), padx=20)
+
+        self.__contourRectAreaMinSeek = mw.SeekBar(master=self, pinColor='black', pinWidth=5,
+                                               seekBg='#CCCCCC',
+                                               maxVal=1000, minVal=0)
+        self.__contourRectAreaMinSeek.setVariable(self.__contourRectMinVar)
+        self.__contourRectAreaMinSeek.setValue(0)
+        self.__contourRectAreaMinSeek.pack(fill=tk.X, side=tk.TOP, pady=(0, 5), padx=20)

@@ -52,14 +52,27 @@ class Application(tk.Frame):
         self.__minContourVar = tk.IntVar()
         self.__minContourVar.trace_add('write', self.__changeContourAreaMin)
 
-    def __createWidgets(self):
-        self.__videoFrame = tk.Frame(master=self)
-        self.__streamContourCanvas = mw.ImageCanvas(master=self.__videoFrame, width=600, height=400)
-        self.__streamContourCanvas.pack(side=tk.TOP)
+        self.__minContourRectVar = tk.IntVar()
+        self.__minContourRectVar.trace_add('write', self.__changeContourRectAreaMin)
 
-        self.__streamPointsCanvas = mw.ImageCanvas(master=self.__videoFrame, width=600, height=400)
-        self.__streamPointsCanvas.pack(side=tk.TOP)
-        self.__videoFrame.pack(side = tk.LEFT)
+    def __createWidgets(self):
+        self.__videoFrame = tk.Frame(master=self, width=600, height=400)
+        self.__streamCanvas = mw.ImageCanvas(master=self.__videoFrame, width=300, height=200)
+        self.__streamCanvas.pack_propagate(0)
+        self.__streamCanvas.place(rely=0.25, relx=0.25, anchor='c')
+
+        self.__streamPointsCanvas = mw.ImageCanvas(master=self.__videoFrame, width=300, height=200)
+        self.__streamPointsCanvas.pack_propagate(0)
+        self.__streamPointsCanvas.place(rely=0.25, relx=0.75, anchor='c')
+
+        self.__streamContourCanvas = mw.ImageCanvas(master=self.__videoFrame, width=300, height=200)
+        self.__streamContourCanvas.pack_propagate(0)
+        self.__streamContourCanvas.place(rely=0.75, relx=0.25, anchor='c')
+
+        self.__streamContourRectCanvas = mw.ImageCanvas(master=self.__videoFrame, width=300, height=200)
+        self.__streamContourRectCanvas.pack_propagate(0)
+        self.__streamContourRectCanvas.place(rely=0.75, relx=0.75, anchor='c')
+        self.__videoFrame.pack(side=tk.LEFT)
 
         self.__hsvRangeDisplay = HSVRangeDisplay(self, self.__hueMinVar, self.__saturationMinVar, self.__valueMinVar,
                                                   self.__hueMaxVar, self.__saturationMaxVar, self.__valueMaxVar,
@@ -69,7 +82,7 @@ class Application(tk.Frame):
 
         self.__colorSettingWidget = ContourMaskSettings(self, self.__hueMinVar, self.__saturationMinVar, self.__valueMinVar,
                                                   self.__hueMaxVar, self.__saturationMaxVar, self.__valueMaxVar,
-                                                  self.__minContourVar,
+                                                  self.__minContourVar, self.__minContourRectVar,
                                                   width=400, height=900)
         self.__colorSettingWidget.pack_propagate(0)
         self.__colorSettingWidget.pack(side=tk.LEFT)
@@ -97,16 +110,22 @@ class Application(tk.Frame):
     def __changeContourAreaMin(self, *_):
         self.__contourDetector.setContourAreaMin(self.__minContourVar.get())
 
+    def __changeContourRectAreaMin(self, *_):
+        self.__contourDetector.setContourRectAreaMin(self.__minContourRectVar.get())
+
     def __receiveCameraData(self, data):
         data = cv.cvtColor(data, cv.COLOR_BGR2HSV)
-        contourImg, contours = self.__contourDetector.findContours(np.copy(data))
+        contourImg, contourRectImg, contours = self.__contourDetector.findContours(np.copy(data))
         contourImg = cv.cvtColor(contourImg, cv.COLOR_HSV2RGB)
+        contourRectImg = cv.cvtColor(contourRectImg, cv.COLOR_HSV2RGB)
         centers = self.__getContoursCenters(contours)
         data = cv.cvtColor(data, cv.COLOR_HSV2RGB)
-        circles = data
+        circles = np.copy(data)
         for c in centers:
-            circles = cv.circle(data, c, 5, (0,255,0), 10)
+            circles = cv.circle(circles, c, 5, (0,255,0), 10)
+        self.__streamCanvas.settleImageData(data)
         self.__streamContourCanvas.settleImageData(contourImg)
+        self.__streamContourRectCanvas.settleImageData(contourRectImg)
         self.__streamPointsCanvas.settleImageData(circles)
 
     def __getContoursCenters(self, contours):
