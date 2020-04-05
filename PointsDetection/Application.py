@@ -2,6 +2,7 @@ import tkinter as tk
 import traceback
 
 import VideoModule as vm
+import numpy as np
 import cv2 as cv
 from ContourMaskSettingsWidget import ContourMaskSettings
 from HSVRangeDisplayWidget import  HSVRangeDisplay
@@ -52,8 +53,13 @@ class Application(tk.Frame):
         self.__minContourVar.trace_add('write', self.__changeContourAreaMin)
 
     def __createWidgets(self):
-        self.__streamCanvas = mw.ImageCanvas(master=self, width=600, height=400)
-        self.__streamCanvas.pack(side=tk.LEFT)
+        self.__videoFrame = tk.Frame(master=self)
+        self.__streamContourCanvas = mw.ImageCanvas(master=self.__videoFrame, width=600, height=400)
+        self.__streamContourCanvas.pack(side=tk.TOP)
+
+        self.__streamPointsCanvas = mw.ImageCanvas(master=self.__videoFrame, width=600, height=400)
+        self.__streamPointsCanvas.pack(side=tk.TOP)
+        self.__videoFrame.pack(side = tk.LEFT)
 
         self.__hsvRangeDisplay = HSVRangeDisplay(self, self.__hueMinVar, self.__saturationMinVar, self.__valueMinVar,
                                                   self.__hueMaxVar, self.__saturationMaxVar, self.__valueMaxVar,
@@ -67,7 +73,6 @@ class Application(tk.Frame):
                                                   width=400, height=900)
         self.__colorSettingWidget.pack_propagate(0)
         self.__colorSettingWidget.pack(side=tk.LEFT)
-
 
     def __changeLowMask(self, *_):
         try:
@@ -94,9 +99,25 @@ class Application(tk.Frame):
 
     def __receiveCameraData(self, data):
         data = cv.cvtColor(data, cv.COLOR_BGR2HSV)
-        data, contours = self.__contourDetector.findContours(data)
+        contourImg, contours = self.__contourDetector.findContours(np.copy(data))
+        contourImg = cv.cvtColor(contourImg, cv.COLOR_HSV2RGB)
+        centers = self.__getContoursCenters(contours)
         data = cv.cvtColor(data, cv.COLOR_HSV2RGB)
-        self.__streamCanvas.settleImageData(data)
+        circles = data
+        for c in centers:
+            circles = cv.circle(data, c, 5, (0,255,0), 10)
+        self.__streamContourCanvas.settleImageData(contourImg)
+        self.__streamPointsCanvas.settleImageData(circles)
+
+    def __getContoursCenters(self, contours):
+        centers = []
+        for c in contours:
+            M = cv.moments(c)
+            cx = int(M['m10']/M['m00'])
+            cy = int(M['m01']/M['m00'])
+            centers.append((cx,cy))
+        return centers
+
 
     def dispose(self):
         self.cam.dispose()
